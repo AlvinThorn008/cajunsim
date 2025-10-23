@@ -37,9 +37,32 @@ double FourierPlotter::sample(double x) {
     return value;
 }
 
+double FourierPlotter::fourier_norm() {
+    double value = 0.0;
+    for (int i = 0; i < coef_count; i++) {
+        value += coefs[i] * coefs[i] + coefs[i + coef_count] * coefs[i + coef_count];
+    }
+    return sqrt(value);
+}
+
+
+std::tuple<double, double> FourierPlotter::find_min_max() {
+    long T0 = (long)(360.0 / f0) + 1;
+    double min = INFINITY, max = 0.0;
+    double val;
+    for (long i = 0; i < T0; i++) {
+        val = sample((double)i);
+        min = __min(min, val);
+        max = __max(max, val);
+    }
+    return {min, max};
+}
+
 void FourierPlotter::start_plotter(size_t num_points) {
     // Handling ctrl-c allows the program to reset the terminal before exiting
     signal(SIGINT, ctrl_c_handler);
+    std::tuple<double, double> range = find_min_max();
+    double min = std::get<0>(range), max = std::get<1>(range);
 
     long x = 0;
     float y, y_1, y_2;
@@ -50,7 +73,7 @@ void FourierPlotter::start_plotter(size_t num_points) {
         x += 1;
         printf("x = " ORG "%0*d" RESET, 8, x);
 
-        y = (sample((double)x)) / max_amplitude;
+        y = (sample((double)x) - min) / (max - min);
         printf(", y = " ORG "%.2f" RESET "|", y);
 
         if (x % TICK_INTERVAL == 0) printf(RED "---" RESET);

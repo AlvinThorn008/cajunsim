@@ -41,6 +41,8 @@ class FourierPlotter {
     void append_cos_coef(double val);
     void append_sin_coef(double val);
     double sample(double x);
+    double fourier_norm();
+    std::tuple<double, double> find_min_max();
     void start_plotter(size_t num_points);
 };
 
