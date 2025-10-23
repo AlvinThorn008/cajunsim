@@ -26,9 +26,9 @@ class Circuit {
     unsigned int nV;
     unsigned int nR;
     unsigned int nI;
-
-    public:
     std::vector<Component> comp;
+
+    public: 
     Circuit();
     Circuit(unsigned int nN, unsigned int nV, unsigned int nR, unsigned int nI);
 
