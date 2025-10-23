@@ -63,3 +63,5 @@ int search_binding(std::span<Equation> eqns, char binding);
 
 ParseResult parse2(std::string_view& str);
 bool skip_while(std::string_view& str, char char_to_skip);
+
+void print_equation_pretty(Equation& eqn);

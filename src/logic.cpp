@@ -268,3 +268,19 @@ int search_binding(std::span<Equation> eqns, char binding) {
     return -1;
 }
 
+/* Print an equation in this textual format */
+void print_equation_pretty(Equation& eqn) {
+    std::span<Node> nodes = eqn.get_nodes();
+    printf("%c = ", eqn.get_binding());
+    for (size_t i = 0; i < nodes.size(); i++) {
+        Node node = nodes[i];
+        if (node.type == val) {
+            printf("%c%s", node.name, node.inv ? "'" : "");
+        } else if (node.type == op_and) {
+            printf(" + ");
+        } else {
+            break;
+        }
+    }
+}
+
