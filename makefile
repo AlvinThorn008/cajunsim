@@ -1,4 +1,4 @@
-SHELL := C:/Users/dubem/scoop/shims/bash.exe
+SHELL := sh
 CXX := g++
 CXXFLAGS := -std=c++20 -O2 -Iinclude -MMD -MP
 
