@@ -65,9 +65,8 @@ void FourierPlotter::start_plotter(size_t num_points) {
     double min = std::get<0>(range), max = std::get<1>(range);
 
     long x = 0;
-    float y, y_1, y_2;
+    float y;
     int out[3];
-    double y_min = INFINITY, y_max = 0.0;
 
     while (num_points-->0 && running) {
         x += 1;
