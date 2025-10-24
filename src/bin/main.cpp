@@ -36,7 +36,9 @@ void logic() {
     printf("Please enter a file to analyze: ");
     std::string filename;
     std::cin >> filename;
-    std::vector<Equation> eqns = parse_file(filename.c_str());
+    bool success;
+    std::vector<Equation> eqns = parse_file(filename.c_str(), success);
+    if (!success) { printf("File could not be opened"); return; }
     CharBitSet vars = combine_vars(eqns);
     std::array<bool, 26> map;
     std::fill(std::begin(map), std::end(map), false);

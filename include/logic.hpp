@@ -55,7 +55,7 @@ using ParseResult = std::variant<parse_status, Equation>;
 
 ParseResult parse(const char* str, size_t& cur, std::size_t len);
 void print_stack(std::span<Node> stack);
-std::vector<Equation> parse_file(const char* filename);
+std::vector<Equation> parse_file(const char* filename, bool& success);
 
 /* Helper methods */
 CharBitSet combine_vars(std::span<Equation> eqns);
