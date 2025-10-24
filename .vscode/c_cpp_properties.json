@@ -1,0 +1,28 @@
+{
+    "env": {
+        "myIncludePath": [
+            "${workspaceFolder}/include",
+            "${workspaceFolder}/src"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "Windows-g++",
+            "compilerPath": "g++",
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "${env:myIncludePath}"
+            ],
+            "cppStandard": "c++20",
+            "browse": {
+                "path": [
+                    "${env:myIncludePath}",
+                    "${workspaceFolder}/src"
+                ]
+            },
+            "cStandard": "c17"
+        }
+    ],
+    "enableConfigurationSquiggles": true,
+    "version": 4
+}

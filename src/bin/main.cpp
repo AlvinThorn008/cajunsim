@@ -5,15 +5,15 @@
 #include <string_view>
 #include <regex>
 #include <bitset>
-#include "circuit.hpp"
-#include "plotter.hpp"
-#include "logic.hpp"
+#include <circuit.hpp>
+#include <plotter.hpp>
+#include <logic.hpp>
 
 void plotter();
 void circuit_sim();
 void logic();
 
-int main(int argc, char *argv[])
+int main()
 {
     printf("[0] Circuit simulator\n[1] Plotter\n[2] Logic gate array\n\n");
     printf("Enter a mode: ");
@@ -98,7 +98,6 @@ void logic() {
         
     }
 }
-
 
 void circuit_sim() {
     Circuit c;
