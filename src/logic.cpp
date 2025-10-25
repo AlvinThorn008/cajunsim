@@ -223,9 +223,9 @@ void print_stack(std::span<Node> stack) {
 }
 
 std::vector<Equation> parse_file(const char* filename, bool& success) {
-    success = true;
     std::ifstream logicfile(filename);
     if (!logicfile.is_open()) { success = false; return {}; }
+    success = true;
     logicfile.seekg(0, std::ios::end);
     size_t size = logicfile.tellg();
     std::string buffer(size, ' ');
