@@ -95,6 +95,8 @@ Please enter a file to analyze: res/example1.cir
 ~/Documents/Docs/Uni/eee/programming/labs/rho2>
 ```
 
+### UML diagram
+![[Untitled Diagram.drawio.png]]
 ### Plotter
 
 _old plotter code_
@@ -180,9 +182,8 @@ void FourierPlotter::start_plotter(size_t num_points) {
     double min = std::get<0>(range), max = std::get<1>(range);
 
     long x = 0;
-    float y, y_1, y_2;
+    float y;
     int out[3];
-    double y_min = INFINITY, y_max = 0.0;
 
     while (num_points-->0 && running) {
         x += 1;
@@ -208,3 +209,30 @@ void FourierPlotter::start_plotter(size_t num_points) {
 ```
 In `start_plotter`, `find_min_max` is used to normalize the fourier series. 
 $$ 0 \leq \frac{f(x) - f_{min}}{f_{max} - f_{min}} \leq 1 $$
+#### C2 bonuses
+In my original C2 code, I made the wave be printed out with a coloured area. The code linearly interpolates between two predefined colours. 
+```cpp
+void lerp(const int c1[3], const int c2[3], int out[3], float t) {
+    out[0] = (int) ((c2[0] - c1[0]) * t + c1[0]);
+    out[1] = (int) ((c2[1] - c1[1]) * t + c1[1]);
+    out[2] = (int) ((c2[2] - c1[2]) * t + c1[2]);
+}
+```
+`t` represents the progression along the line between the two colours. Since `y` is normalized to `[0, 1]`, the colours chosen should lie on the line **segment** joining the two colours in RGB vector space. The spaces used to offset the `*` symbol will have the chosen colour at their background. This means the gradient direction is downwards.
+
+```cpp
+// https://stackoverflow.com/questions/4217037/catch-ctrl-c-in-c
+static volatile sig_atomic_t running = 1;
+static void ctrl_c_handler(int _) {
+    (void)_;
+    running = 0;
+}
+
+/* set ctrl_c handler */
+signal(SIGINT, ctrl_c_handler);
+```
+If ctrl+c is entered, the program terminates (sending SIGINT before it ends). If this happens before the current text colour setting has been reset, the user's terminal will print with that colour. See the image below:
+
+![[Pasted image 20251024173947.png]]
+To fix this, I created a function to run when ctrl+c is pressed. All it does is set a static global to `false`. When this happens, the while loop in `start_plotter` terminates and the rest of the function executes as normal. Proceeding the while loop is a printf to reset the terminal colour.
+
