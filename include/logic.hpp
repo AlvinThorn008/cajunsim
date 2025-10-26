@@ -3,6 +3,7 @@
 #include <span>
 #include <variant>
 #include <cstdint>
+#include <string_view>
 
 class CharBitSet { 
     std::uint32_t x;
