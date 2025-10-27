@@ -12,15 +12,10 @@ class CharBitSet {
     public:
     CharBitSet();
     CharBitSet(std::uint32_t x);
-
     CharBitSet operator +(CharBitSet other);
-
     void set(char a);
-
     char next_char();
-
     bool contains(char a);
-
     std::uint32_t get_raw();
 };
 
