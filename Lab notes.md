@@ -236,3 +236,58 @@ If ctrl+c is entered, the program terminates (sending SIGINT before it ends). If
 ![[Pasted image 20251024173947.png]]
 To fix this, I created a function to run when ctrl+c is pressed. All it does is set a static global to `false`. When this happens, the while loop in `start_plotter` terminates and the rest of the function executes as normal. Proceeding the while loop is a printf to reset the terminal colour.
 
+### UML diagram
+
+![[fourierplotter_uml.png]]
+### Testing
+![[Pasted image 20251026231720.png]]
+**Generated waveform**
+![[Pasted image 20251026231847.png]]
+**Reference image**
+![[Pasted image 20251026233036.png]]
+## 3. Laboratory Work
+
+### 3.1 Unit testing
+
+#### Circuit simulator
+```cpp
+#include <circuit.hpp>
+#include <stdio.h>
+
+int main() {
+    Circuit c1 = Circuit::createFromFile("res/example1.cir");
+    c1.analyseCircuit();
+}
+```
+
+**res/example1.cir**
+```
+V1 1 0 12.0
+R1 1 2 1000.0
+R2 2 0 2000.0
+R3 2 0 2000.0
+```
+
+**Console output**
+![[Pasted image 20251027013139.png]]
+
+**Falstad simulation**
+![[Pasted image 20251027010045.png]]
+
+#### Fourier plotter
+```cpp
+#include <plotter.hpp>
+
+int main() {
+    FourierPlotter plotter(14, 2.67);
+    int count = 14;
+    while(count-->0) plotter.append_cos_coef(0.0);
+
+    for (int i = 1; i < 29; i += 2) {
+        plotter.append_sin_coef(0.0);
+        plotter.append_sin_coef(1.0 / (double)i);
+    }
+    plotter.start_plotter(5000);
+}
+```
+![[Pasted image 20251027015147.png]]
