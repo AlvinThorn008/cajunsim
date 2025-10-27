@@ -258,7 +258,7 @@ std::vector<Equation> parse_file(const char* filename, bool& success) {
 
 /* Helper methods */
 CharBitSet combine_vars(std::span<Equation> eqns) {
-    CharBitSet out;
+    CharBitSet out(0);
     for (auto eqn : eqns) out = out + eqn.get_vars();
     return out;
 }
