@@ -3,7 +3,12 @@
 #include <iostream>
 #include <bitset>
 
-// Write `val` into the values at the given character indices
+/* 
+Write `val` into the values at the given character indices 
+
+`vars` determines the characters to write to. Used up characters in written in descending 
+lexicographical order starting at the LSB of `val`.
+*/
 void write_val(uint32_t val, CharBitSet vars, std::span<bool> values) {
     while (val) {
         int idx = vars.next_char() - 'A';
@@ -34,3 +39,17 @@ int main() {
     }
 }
 
+
+/**
+ 
+if (y > centre) {
+    for ()
+} else {
+    
+}
+
+std::cout << "\033[" << int(y) << "G" << "*"
+std::cout << "\033[" << int(centre) << "G" << "*"
+
+
+*/

@@ -12,10 +12,18 @@
 void plotter();
 void circuit_sim();
 void logic();
+bool main_menu();
 
-int main()
+int main() {
+    while (main_menu());
+    printf("Thank you for using Cajun5im\n");
+
+    return 0;
+}
+
+bool main_menu()
 {
-    printf("[0] Circuit simulator\n[1] Plotter\n[2] Logic gate array\n\n");
+    printf("\n[0] Circuit simulator\n[1] Plotter\n[2] Logic gate array\n[3] Quit\n\n");
     printf("Enter a mode: ");
     unsigned int mode;
     std::cin >> mode;
@@ -25,10 +33,12 @@ int main()
         case 0: circuit_sim(); break;
         case 1: plotter(); break;
         case 2: logic(); break;
+        case 3: return false;
         default: break;
     }
 
-    return EXIT_SUCCESS;
+    printf("\n\n");
+    return true;
 }
 
 void logic() {

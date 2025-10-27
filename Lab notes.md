@@ -96,7 +96,7 @@ Please enter a file to analyze: res/example1.cir
 ```
 
 ### UML diagram
-![[Untitled Diagram.drawio.png]]
+![[Untitled Diagram.drawio.png|800]]
 ### Plotter
 
 _old plotter code_
@@ -240,16 +240,207 @@ To fix this, I created a function to run when ctrl+c is pressed. All it does is 
 
 ![[fourierplotter_uml.png]]
 ### Testing
-![[Pasted image 20251026231720.png]]
+![[Pasted image 20251026231720.png|500]]
 **Generated waveform**
 ![[Pasted image 20251026231847.png]]
-**Reference image**
-![[Pasted image 20251026233036.png]]
+### Logic gates
+The logic gate task is to devise a method that computes the value of a Sum of Products (SOP) expression given some representation for it and the values of its variables. I implemented two different approaches to representing the sum of products expression.
+
+#### Approach 1: Literal SOP expression
+Given a sum of products expression in its literal form e.g. `x = ABC' + BD`, a parse stack of the inputs is created which can later be used to evaluate the expression. There are 3 keys concepts here: **bindings**, **variables** and **values**. A binding is the name of an equation(in this case `x`). Variables are the uppercase letters referenced in expression. Values are the evaluation-time substitutes for variables.
+The grammar is very simple
+```ebnf
+<Equation> = <lower> <space> "=" <space> <term> (<space> "+" <space> <term>)*
+<term> = <var> (<space> <var>)* (*1 or more <var>s separated optional whitespace*)
+<var> = <upper> "'"?
+<space> = (" ")*  (*0 or more spaces*)
+<lower> = [a-z]
+<upper> = [A-Z]
+```
+It turns out this grammar also happens to be regular so it can parsed via regex which C++ supports in its standard library. An explicit state machine would also work but the implementation I made turned out to be rather verbose. Due to this, I reimplemented the state machine implicitly using standard iterations and selection structures. Before presenting that, I will explain the relevant classes.
+
+```cpp
+class Equation {
+    char binding;
+    std::vector<Node> nodes;
+    CharBitSet vars;
+    
+    public:
+    Equation();
+    Equation(char binding, std::vector<Node> nodes, CharBitSet vars);
+    char get_binding();
+    CharBitSet get_vars();
+    std::span<Node> get_nodes();
+    bool evaluate(std::span<bool, 26> map);
+};
+
+enum node_type { op_or = 0, op_and, val };
+
+struct Node {
+    node_type type;
+    char name;
+    bool inv;
+};
+
+class CharBitSet {
+    std::uint32_t x;
+    std::uint32_t x_mut;
+
+    public:
+    CharBitSet();
+    CharBitSet(std::uint32_t x);
+    CharBitSet operator +(CharBitSet other);
+    void set(char a);
+    char next_char();
+    bool contains(char a);
+    std::uint32_t get_raw();
+};
+```
+
+The `Equation` class holds the binding and variables of an expression. The internal node list `nodes` is essentially the parser output. `Equation::evaluate` takes an array(technically a span) of values. Since the variables are limited to uppercase letters, the max size of the values array is 26. I use this to get constant time access to the value for each variables during evaluation. The restriction to A-Z led to the design of `CharBitSet`, a very basic handrolled bitset that enforces bit writes and reads to be limited to the least 26 bits.
+
+**Parsing**
+```cpp
+ParseResult parse2(std::string_view& str) {
+    size_t cur = 0;
+    char func;
+    ParseResult res;
+    parse_status err;
+    std::vector<Node> stack;
+    CharBitSet vars(0);
+    bool eof = false;
+    bool valid = false;
+    while (true) {
+        // Section #1
+        if (!islower(str[0])) { err = expect_binding; break; }
+        func = str[0];
+        err = expect_equal;
+        str = str.substr(1); // skip <binding name>
+        if (eof = !skip_while(str, ' ')) break;
+        if (str[0] != '=') break;
+        str = str.substr(1); // skip `=`
+        err = expect_var;
+        if (eof = !skip_while(str, ' ')) break;
+  
+	    // Section #2
+        while (true) {
+            if (!isupper(str[0])) { break; }
+            vars.set(str[0]);
+            stack.push_back({val, str[0], false});
+            str = str.substr(1); // skip <var name>
+            valid = true;
+            
+            if (str.length() > 0 && str[0] == '\'') { stack.back().inv = true; str = str.substr(1); } // skip `'`
+            if (eof = !skip_while(str, ' ')) break;
+            if (str[0] == '+') { stack.push_back({op_and, '\0', false}); valid = false; str = str.substr(1); } // skip `+`
+            if (eof = !skip_while(str, ' ')) break;
+        }
+        break;
+    }
+
+    res = err;
+    if (eof && valid) { stack.push_back({op_or, '\0', false}); res = Equation(func, stack, vars); }
+
+    return res;
+}
+```
+Following the grammar, the general operation of the code is fairly clear. Section 1 parses `x = ` while Section 2 parses the terms using `'+'`, `EOF` or `'\n'` as a delimiter, signalling to group previously seen variables. The function can then be called multiple times in order to parse several equations in a file.
+
+**Evaluation**
+```cpp
+bool Equation::evaluate(std::span<bool, 26> map) {
+    std::vector<bool> stack;
+    bool res = 0;
+    bool term = 1;
+    for (size_t i = 0; i < nodes.size(); i++) {
+        Node node = nodes[i];
+        switch (node.type) {
+            case val: term = term && (map[node.name - 'A'] != node.inv); break;
+            case op_and:
+            case op_or: {
+                res = res || term;
+                term = 1;
+                break;
+            }
+            default: break;
+        }
+    }
+    return res;
+}
+```
+To understand the evaluation logic, consider the node list for the expression: `AB + B'C + A'C`
+NodeList: `[A, B, op_and, B', C, op_and, A', C, op_or]`
+The `op_and` node essentially delimits the variables, forming terms while `op_or` is just a terminator. Evaluation is simply a matter of ANDing variables until an operator appears, then the result of ANDing is ORed with an accumulator variable(`res`).
+
+#### Approach 2: Logic matrix
+This is the method we were expected to implement. It is comparatively much simpler. I will only focus on the evaluation logic for this part.
+
+```cpp
+bool LogicMap::evaluate(std::span<bool> values, size_t output_idx) {
+    if (output_idx >= num_outputs) return false;
+    size_t row_start = num_products * output_idx;
+
+	// Slice row `output_idx` from the output matrix (or_nodes)
+    std::span<uint8_t> row(
+        or_nodes.begin()+row_start,
+        or_nodes.begin()+row_start+num_products
+    );
+
+    uint8_t res = 0;
+    for (int i = 0; i < row.size(); i++) {
+        uint8_t not_clear = 0;
+        int product_start = i * num_inputs * 2;
+
+        if (row[i] == 1) {
+            uint8_t res_and = 1;
+            for (int j = 0; j < num_inputs * 2; j += 2) {
+                uint8_t val = values[j / 2];
+                uint8_t inv = and_nodes[product_start + j];
+                uint8_t reg = and_nodes[product_start + j + 1];
+                /*
+                c(I, R, V)
+                    = V  if (I R) = (0 1)
+                    = V' if (I R) = (1 0)
+                    = 1  if (I R) = (0 0)
+                    = 0  if (I R) = (1 1)
+                c(I, R, V) = V ~I + ~V ~R (minimized)
+                */
+                res_and &= (val & ~inv) | (~val & ~reg);
+                not_clear |= inv | reg;
+            }
+            res |= res_and & not_clear;
+        }
+    }
+    return res == 1;
+
+}
+```
+
+```
+     =====Inputs matrix======       =Output matrix=
+     ~a | a | ~b | b | ~c | c         x | y | z  
+[0]   0   1    1   0    0   1   <--   1   1   0
+[1]   1   0    1   0    1   0   <--   0   1   0
+[2]   0   1    0   1    1   0   <--   1   0   1
+ 
+ x = [1 0 1]
+ x_out = and([0]) || and([2])
+
+```
+Each referenced product has its value calculated by working with the inverse and regular line of each variable in pairs. The boolean function `c(I, R, V)` selects the either the variable or its complement depending on whether I or R is set. When they are both set, the result should be zero since `~A . A = 0`. When neither line is set, the result is 1. This effectively removes the pair from the SOP term. Finally, the `not_clear` flag is used to ignore the products if no lines are set.
+
+**Testing**
+res/ex1.logic
+```haskell
+x =  ABC' + A'BC + A'B'C
+```
+![[Pasted image 20251027185631.png|500]]
 ## 3. Laboratory Work
 
 ### 3.1 Unit testing
 
 #### Circuit simulator
+In this test, I compare the simulator results with an established circuit simulator (Falstad). The nodes are being measured with references to Node 0 in [Falstad](https://www.falstad.com/circuit/circuitjs.html).
 ```cpp
 #include <circuit.hpp>
 #include <stdio.h>
@@ -269,12 +460,14 @@ R3 2 0 2000.0
 ```
 
 **Console output**
-![[Pasted image 20251027013139.png]]
+![[Pasted image 20251027013139.png|400]]
 
 **Falstad simulation**
-![[Pasted image 20251027010045.png]]
+![[Pasted image 20251027010045.png|400]]
+As can be seen from the meter reading, the results agree.
 
 #### Fourier plotter
+In this test, I forgo the user interface using the class that handles plotting directly. Square wave coefficients are computed and passed into the plotter. Finally, the output is compared to a reference graph created using [desmos](https://desmos.com/calculator)
 ```cpp
 #include <plotter.hpp>
 
@@ -290,4 +483,55 @@ int main() {
     plotter.start_plotter(5000);
 }
 ```
+
+**Terminal**
 ![[Pasted image 20251027015147.png]]
+**Desmos**
+![[Pasted image 20251027154626.png]]
+#### Logic simulator
+
+**Code**
+```cpp
+#include <logic.hpp>
+#include <stdio.h>
+#include <iostream>
+#include <bitset>
+
+// Write `val` into the values at the given character indices
+void write_val(uint32_t val, CharBitSet vars, std::span<bool> values) {
+    while (val) {
+        int idx = vars.next_char() - 'A';
+        values[idx] = val & 1;
+        val >>= 1;
+    }
+}
+
+int main() {
+    std::array<bool, 26> map;
+    std::fill(std::begin(map), std::end(map), false);
+    bool success;
+    auto eqns = parse_file("res/ex1.logic", success);
+    printf("Number of equations: %u\n", eqns.size());
+    CharBitSet vars = combine_vars(eqns);
+
+    //                    SRQPONMLKJIHGFEDCBA
+    CharBitSet ref_vars(0b0000000000000000111);
+
+    printf("Vars: %u | RefVars: %u | Match: %u\n", vars.get_raw(), ref_vars.get_raw(), vars.get_raw() == ref_vars.get_raw());
+
+    for (int i = 0; i < 7; i++) {
+        write_val(i, vars, map);
+        std::cout << "(ABC) = (" << std::bitset<3>(i) << ") : ";
+        printf("x = %u\n", eqns[0].evaluate(map));
+        std::fill(std::begin(map), std::end(map), false);
+    }
+}
+```
+
+**Simulator input file** (res/ex1.logic)
+```haskell
+x =  ABC' + A'BC + A'B'C
+```
+
+**Program output**
+![[Pasted image 20251027035727.png|500]]

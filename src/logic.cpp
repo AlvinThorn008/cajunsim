@@ -59,7 +59,7 @@ bool skip_while(std::string_view& str, char char_to_skip) {
     size_t cur = 0;
     bool in_eqn = false;
     while (in_eqn = (cur < str.length() && str[cur] != '\n')) {
-        printf("cur = %u, c = %c\n", cur, str[cur]);
+        // printf("cur = %u, c = %c\n", cur, str[cur]);
         if (str[cur] == char_to_skip) cur++;
         else { cur = cur == 0 ? 0 : cur--; break; }
     }

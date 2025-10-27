@@ -21,7 +21,7 @@
 #define ORG "\x1B[38;2;255;143;79m"
 
 // Console width available for '*'s to be printed.
-const int PLOT_WIDTH = 160;
+const int PLOT_WIDTH = 270;
 // How frequently should graduations appear
 const int TICK_INTERVAL = 10;
 const int c1[3] = {255, 102, 0};
